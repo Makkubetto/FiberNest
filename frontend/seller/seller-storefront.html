@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – Manage Storefront</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+  <script src="seller-layout.js"></script>
+</head>
+<body class="font-sans">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const EMPTY_BANNER = { title:"", subtitle:"", cta:"Shop Now" };
+const DEFAULT_SF = {
+  banner: { title:"Welcome to FiberNest", subtitle:"Premium coconut coir products for every need.", cta:"Shop Now" },
+  new: [], trending: [], bestseller: [],
+};
+
+function ProductPicker({ products, selected, onToggle, label }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">{label}</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-52 overflow-y-auto pr-1">
+        {products.map(p => {
+          const isSelected = selected.some(s => s.id === p.id);
+          return (
+            <button key={p.id} onClick={() => onToggle(p)}
+              className={`p-3 rounded-xl border-2 text-left transition-all text-xs ${isSelected?"border-sage bg-sage/5":"border-stone-200 hover:border-stone-300 bg-white"}`}>
+              <p className="font-semibold text-gray-900 truncate">{p.name}</p>
+              <p className="text-gray-400 mt-0.5">₱{p.price}</p>
+              {isSelected && <p className="text-sage font-bold mt-1">✓ Selected</p>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [sf, setSf] = useState(DEFAULT_SF);
+  const [products, setProducts] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState("banner");
+
+  useEffect(() => {
+    Api.get("/storefront").then(d => setSf({ ...DEFAULT_SF, ...d })).catch(() => {});
+    Api.get("/products").then(d => setProducts(d.products || d)).catch(() => {
+      setProducts([
+        { id:1,name:"Coco Peat Block 5kg",price:350,category:"Gardening" },
+        { id:2,name:"Coir Erosion Mat",price:980,category:"Construction" },
+        { id:3,name:"Natural Doormat",price:495,category:"Home" },
+        { id:4,name:"Grow Bag Set 5pcs",price:399,category:"Gardening" },
+        { id:5,name:"Bulk Coir Fiber 10kg",price:750,category:"Industrial" },
+        { id:6,name:"Coir Rope 50m",price:380,category:"Industrial" },
+      ]);
+    });
+  }, []);
+
+  const setBanner = (k, v) => setSf(s => ({ ...s, banner: { ...s.banner, [k]: v } }));
+
+  const toggleSection = (section, product) => {
+    setSf(s => {
+      const arr = s[section] || [];
+      const exists = arr.some(p => p.id === product.id);
+      const updated = exists ? arr.filter(p => p.id !== product.id) : [...arr, { ...product, badge: section === "new" ? "New" : section === "trending" ? "Trending" : "Best Seller" }];
+      return { ...s, [section]: updated };
+    });
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await Api.put("/storefront", sf);
+      setSaved(true); setTimeout(() => setSaved(false), 3000);
+    } catch(e) { alert("Error: " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  const TABS = [["banner","🖼️ Banner"],["new","✨ New Arrivals"],["trending","🔥 Trending"],["bestseller","⭐ Best Sellers"]];
+
+  return (
+    <SellerLayout active="Storefront">
+      {saved && <div className="fixed top-16 right-6 z-50 bg-green-600 text-white px-5 py-3 rounded-xl text-sm font-medium shadow-lg">✅ Storefront saved!</div>}
+      <div className="max-w-4xl">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-gray-900">Manage Storefront</h1>
+            <p className="text-gray-400 mt-1">Customize what buyers see on the storefront page.</p>
+          </div>
+          <div className="flex gap-3">
+            <a href="../buyer/storefront.html" target="_blank" className="px-4 py-2 bg-stone-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-stone-200 transition-all">👁️ Preview</a>
+            <button onClick={save} disabled={saving} className="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-all disabled:opacity-50">
+              {saving ? "Saving…" : "💾 Save Changes"}
+            </button>
+          </div>
+        </div>
+
+        {/* Tab nav */}
+        <div className="flex gap-1 bg-white border border-stone-200 rounded-xl p-1 mb-6 flex-wrap">
+          {TABS.map(([t, label]) => (
+            <button key={t} onClick={() => setActiveTab(t)}
+              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab===t?"bg-gray-900 text-white":"text-gray-500 hover:text-gray-700"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+          {/* Banner tab */}
+          {activeTab === "banner" && (
+            <div className="space-y-5">
+              <h2 className="font-display text-xl font-bold text-gray-900 mb-4">Hero Banner</h2>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Banner Title</label>
+                <input value={sf.banner?.title || ""} onChange={e => setBanner("title",e.target.value)} placeholder="e.g. Summer Gardening Sale"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Subtitle</label>
+                <textarea value={sf.banner?.subtitle || ""} onChange={e => setBanner("subtitle",e.target.value)} rows={2} placeholder="A short description of your campaign"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 resize-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">CTA Button Text</label>
+                <input value={sf.banner?.cta || ""} onChange={e => setBanner("cta",e.target.value)} placeholder="e.g. Shop Now"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20" />
+              </div>
+              {/* Preview */}
+              <div className="mt-4 bg-gradient-to-r from-sage to-sage-dark rounded-2xl p-8 text-white">
+                <p className="text-white/60 text-xs uppercase tracking-widest mb-2">Preview</p>
+                <h3 className="font-display text-2xl font-bold mb-2">{sf.banner?.title || "Banner Title"}</h3>
+                <p className="text-white/80 text-sm mb-4">{sf.banner?.subtitle || "Your subtitle here"}</p>
+                <span className="inline-block px-4 py-2 bg-white text-gray-900 text-sm font-semibold rounded-xl">{sf.banner?.cta || "Shop Now"}</span>
+              </div>
+            </div>
+          )}
+
+          {/* New Arrivals tab */}
+          {activeTab === "new" && (
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display text-xl font-bold text-gray-900">New Arrivals</h2>
+                <span className="text-sm text-gray-400">{sf.new?.length || 0} selected (max 4)</span>
+              </div>
+              <ProductPicker products={products} selected={sf.new || []} onToggle={p => toggleSection("new",p)} label="Select products to show as New Arrivals" />
+              {(sf.new?.length || 0) > 0 && (
+                <div className="mt-5 p-4 bg-stone-50 rounded-xl">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Selected:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sf.new.map(p => (
+                      <span key={p.id} className="px-3 py-1 bg-sage/15 text-sage text-xs font-semibold rounded-full flex items-center gap-1">
+                        {p.name} <button onClick={() => toggleSection("new",p)} className="hover:text-red-500">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Trending tab */}
+          {activeTab === "trending" && (
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display text-xl font-bold text-gray-900">Trending Now</h2>
+                <span className="text-sm text-gray-400">{sf.trending?.length || 0} selected (max 4)</span>
+              </div>
+              <ProductPicker products={products} selected={sf.trending || []} onToggle={p => toggleSection("trending",p)} label="Select products to show as Trending" />
+              {(sf.trending?.length || 0) > 0 && (
+                <div className="mt-5 p-4 bg-stone-50 rounded-xl">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Selected:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sf.trending.map(p => (
+                      <span key={p.id} className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full flex items-center gap-1">
+                        {p.name} <button onClick={() => toggleSection("trending",p)} className="hover:text-red-500">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Best Sellers tab */}
+          {activeTab === "bestseller" && (
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display text-xl font-bold text-gray-900">Best Sellers</h2>
+                <span className="text-sm text-gray-400">{sf.bestseller?.length || 0} selected (max 4)</span>
+              </div>
+              <ProductPicker products={products} selected={sf.bestseller || []} onToggle={p => toggleSection("bestseller",p)} label="Select products to show as Best Sellers" />
+              {(sf.bestseller?.length || 0) > 0 && (
+                <div className="mt-5 p-4 bg-stone-50 rounded-xl">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Selected:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sf.bestseller.map(p => (
+                      <span key={p.id} className="px-3 py-1 bg-sage/15 text-sage text-xs font-semibold rounded-full flex items-center gap-1">
+                        {p.name} <button onClick={() => toggleSection("bestseller",p)} className="hover:text-red-500">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </SellerLayout>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

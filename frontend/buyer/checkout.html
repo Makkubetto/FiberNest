@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – Checkout</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0",tan:"#e8dfd0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+</head>
+<body class="bg-cream font-sans min-h-screen flex flex-col">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const PAYMENT_METHODS = [
+  { id:"cod", label:"Cash on Delivery", icon:"💵", desc:"Pay when your order arrives." },
+  { id:"gcash", label:"GCash", icon:"📱", desc:"Pay via GCash e-wallet." },
+  { id:"maya", label:"Maya", icon:"💳", desc:"Pay via Maya (PayMaya) e-wallet." },
+  { id:"bank", label:"Bank Transfer", icon:"🏦", desc:"BDO, BPI, Metrobank." },
+];
+
+function Step({ n, label, active, done }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${done?"bg-sage text-white":active?"bg-gray-900 text-white":"bg-stone-200 text-gray-400"}`}>
+        {done ? "✓" : n}
+      </div>
+      <span className={`text-sm font-medium ${active?"text-gray-900":done?"text-sage":"text-gray-400"}`}>{label}</span>
+    </div>
+  );
+}
+
+function App() {
+  const [step, setStep] = useState(1);
+  const [cart, setCart] = useState([]);
+  const [user, setUser] = useState(null);
+  const [form, setForm] = useState({ delivery:"delivery", address:"", region:"", notes:"", payment:"cod" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [orderId, setOrderId] = useState(null);
+
+  useEffect(() => {
+    const c = Api.cart.get(); setCart(c);
+    const u = Api.getUser(); setUser(u);
+    if (u) setForm(f => ({ ...f, address: u.address || "" }));
+  }, []);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const shipping = form.delivery === "pickup" ? 0 : subtotal > 2000 ? 0 : 150;
+  const total = subtotal + shipping;
+
+  const placeOrder = async () => {
+    setError(""); setLoading(true);
+    try {
+      if (!Api.isLoggedIn()) { window.location.href = "login.html"; return; }
+      const order = await Api.post("/orders", {
+        items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity, price: i.price })),
+        delivery_method: form.delivery,
+        delivery_address: form.delivery === "delivery" ? `${form.address}, ${form.region}` : "Pickup",
+        notes: form.notes,
+        payment_method: form.payment,
+        subtotal, shipping_fee: shipping, total,
+      });
+      Api.cart.clear();
+      setOrderId(order.id || order.order_id || "ORD-" + Date.now());
+      setStep(4);
+    } catch(e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  if (step === 4) return (
+    <div className="flex flex-col min-h-screen">
+      <nav className="bg-white border-b border-stone-200 h-16 flex items-center px-6">
+        <a href="index.html" className="flex items-center gap-2"><div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div><span className="font-display font-bold text-gray-900 text-lg">FiberNest</span></a>
+      </nav>
+      <main className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-5xl mx-auto mb-6">✅</div>
+          <h1 className="font-display text-3xl font-bold text-gray-900 mb-3">Order Placed!</h1>
+          <p className="text-gray-400 mb-2">Thank you for your purchase. Your order has been received.</p>
+          <p className="text-sage font-semibold mb-8">Order #{orderId}</p>
+          <div className="flex gap-3 justify-center">
+            <a href="transactions.html" className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">View My Orders</a>
+            <a href="products.html" className="px-6 py-3 bg-white border border-stone-200 text-gray-700 font-semibold rounded-xl hover:bg-stone-50 transition-all">Shop More</a>
+          </div>
+        </div>
+      </main>
+      <footer className="bg-gray-900 py-4"><p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p></footer>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <nav className="bg-white border-b border-stone-200 h-16 flex items-center px-6 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+          <a href="index.html" className="flex items-center gap-2"><div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div><span className="font-display font-bold text-gray-900 text-lg">FiberNest</span></a>
+          <div className="hidden md:flex items-center gap-4">
+            <Step n={1} label="Delivery" active={step===1} done={step>1} />
+            <div className="w-8 h-px bg-stone-300"></div>
+            <Step n={2} label="Payment" active={step===2} done={step>2} />
+            <div className="w-8 h-px bg-stone-300"></div>
+            <Step n={3} label="Review" active={step===3} done={step>3} />
+          </div>
+          <a href="cart.html" className="text-sm text-gray-400 hover:text-gray-600">← Back to Cart</a>
+        </div>
+      </nav>
+
+      <main className="flex-1 max-w-5xl mx-auto px-6 py-10 w-full">
+        <h1 className="font-display text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+        {error && <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">⚠️ {error}</div>}
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Main Form */}
+          <div className="md:col-span-2">
+            {/* Step 1 – Delivery */}
+            {step === 1 && (
+              <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-5">
+                <h2 className="font-display text-xl font-bold text-gray-900">Delivery Information</h2>
+                <div>
+                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">Receive Method</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[["delivery","🚚","Delivery","Ship to my address"],["pickup","🏪","Pickup","Pick up at our store"]].map(([val,ico,label,desc]) => (
+                      <button key={val} onClick={() => set("delivery",val)}
+                        className={`p-4 rounded-xl border-2 text-left transition-all ${form.delivery===val?"border-sage bg-sage/5":"border-stone-200 hover:border-stone-300"}`}>
+                        <span className="text-2xl block mb-1">{ico}</span>
+                        <p className="font-semibold text-sm text-gray-900">{label}</p>
+                        <p className="text-xs text-gray-400">{desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {form.delivery === "delivery" && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Street Address</label>
+                      <textarea value={form.address} onChange={e => set("address",e.target.value)} rows={2} placeholder="House/Unit No., Street, Barangay, City"
+                        className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 resize-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Region</label>
+                      <select value={form.region} onChange={e => set("region",e.target.value)}
+                        className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage bg-white appearance-none">
+                        <option value="">Select region…</option>
+                        {["NCR","Region I","Region II","Region III","Region IV-A","Region V","Region VI","Region VII","Region VIII","Region IX","Region X","Region XI","Region XII","CARAGA","BARMM","CAR"].map(r=><option key={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Order Notes (optional)</label>
+                      <textarea value={form.notes} onChange={e => set("notes",e.target.value)} rows={2} placeholder="Special instructions…"
+                        className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 resize-none" />
+                    </div>
+                  </div>
+                )}
+                <button onClick={() => setStep(2)} className="w-full py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">Continue to Payment →</button>
+              </div>
+            )}
+
+            {/* Step 2 – Payment */}
+            {step === 2 && (
+              <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-5">
+                <h2 className="font-display text-xl font-bold text-gray-900">Payment Method</h2>
+                <div className="space-y-3">
+                  {PAYMENT_METHODS.map(pm => (
+                    <button key={pm.id} onClick={() => set("payment",pm.id)}
+                      className={`w-full p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all ${form.payment===pm.id?"border-sage bg-sage/5":"border-stone-200 hover:border-stone-300"}`}>
+                      <span className="text-2xl">{pm.icon}</span>
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">{pm.label}</p>
+                        <p className="text-xs text-gray-400">{pm.desc}</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.payment===pm.id?"border-sage bg-sage":"border-stone-300"}`}>
+                        {form.payment===pm.id && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(1)} className="flex-1 py-3.5 bg-stone-100 text-gray-700 font-semibold rounded-xl hover:bg-stone-200 transition-all">← Back</button>
+                  <button onClick={() => setStep(3)} className="flex-1 py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">Review Order →</button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3 – Review */}
+            {step === 3 && (
+              <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-5">
+                <h2 className="font-display text-xl font-bold text-gray-900">Review Order</h2>
+                <div className="space-y-3">
+                  {cart.map(item => (
+                    <div key={item.product_id} className="flex items-center gap-4 py-3 border-b border-stone-100 last:border-0">
+                      <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-2xl">🥥</div>
+                      <div className="flex-1"><p className="font-medium text-sm text-gray-900">{item.name}</p><p className="text-xs text-gray-400">Qty: {item.quantity}</p></div>
+                      <p className="font-semibold text-gray-900">₱{(item.price*item.quantity).toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-stone-50 rounded-xl p-4 text-sm space-y-2">
+                  <div className="flex justify-between"><span className="text-gray-500">Delivery</span><span className="font-medium">{form.delivery === "pickup" ? "Pickup" : form.address + (form.region ? ", "+form.region:"")}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="font-medium">{PAYMENT_METHODS.find(p=>p.id===form.payment)?.label}</span></div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(2)} className="flex-1 py-3.5 bg-stone-100 text-gray-700 font-semibold rounded-xl hover:bg-stone-200 transition-all">← Back</button>
+                  <button onClick={placeOrder} disabled={loading} className="flex-1 py-3.5 bg-sage text-white font-semibold rounded-xl hover:bg-sage-dark transition-all disabled:opacity-50">
+                    {loading ? "Placing Order…" : "✅ Place Order"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Summary */}
+          <div>
+            <div className="bg-white rounded-2xl border border-stone-200 p-5 sticky top-24">
+              <h3 className="font-display font-bold text-gray-900 mb-4">Summary</h3>
+              <div className="space-y-2 text-sm mb-4">
+                <div className="flex justify-between text-gray-500"><span>Subtotal</span><span>₱{subtotal.toLocaleString()}</span></div>
+                <div className="flex justify-between text-gray-500"><span>Shipping</span><span className={shipping===0?"text-green-600 font-semibold":""}>{shipping===0?"FREE":"₱"+shipping}</span></div>
+                <div className="border-t border-stone-100 pt-2 flex justify-between font-bold text-gray-900"><span>Total</span><span>₱{total.toLocaleString()}</span></div>
+              </div>
+              <div className="space-y-2">
+                {cart.map(i => (
+                  <div key={i.product_id} className="flex justify-between text-xs text-gray-400">
+                    <span className="truncate flex-1">{i.name} ×{i.quantity}</span>
+                    <span className="ml-2">₱{(i.price*i.quantity).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <footer className="bg-gray-900 py-4 mt-auto">
+        <p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

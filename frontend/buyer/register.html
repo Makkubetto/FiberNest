@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – Create Account</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0",tan:"#e8dfd0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+</head>
+<body class="bg-cream font-sans min-h-screen flex flex-col">
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const REGIONS = ["NCR","Region I","Region II","Region III","Region IV-A","Region IV-B","Region V","Region VI","Region VII","Region VIII","Region IX","Region X","Region XI","Region XII","CARAGA","BARMM","CAR"];
+
+function Field({ label, children, error }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">{label}</label>
+      {children}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+function App() {
+  const [form, setForm] = useState({ email:"", password:"", confirm_password:"", full_name:"", address:"", region:"", mobile:"" });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const validate = () => {
+    const e = {};
+    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = "Enter a valid email address";
+    if (form.password.length < 8) e.password = "Password must be at least 8 characters";
+    if (form.password !== form.confirm_password) e.confirm_password = "Passwords do not match";
+    if (!form.full_name.trim()) e.full_name = "Full name is required";
+    if (!form.address.trim()) e.address = "Address is required";
+    if (!form.mobile.match(/^(09|\+639)\d{9}$/)) e.mobile = "Enter a valid PH mobile number (e.g. 09123456789)";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    setApiError(""); setLoading(true);
+    try {
+      await Api.post("/auth/register", {
+        email: form.email, password: form.password,
+        full_name: form.full_name,
+        address: `${form.address}, ${form.region}`,
+        mobile: form.mobile, role: "buyer",
+      });
+      setSuccess(true);
+    } catch (e) { setApiError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  if (success) return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl mb-6">✅</div>
+      <h2 className="font-display text-3xl font-bold text-gray-900 mb-3">Account Created!</h2>
+      <p className="text-gray-400 mb-6">Welcome to FiberNest. You can now sign in.</p>
+      <a href="login.html" className="px-8 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">Sign In</a>
+    </div>
+  );
+
+  const input = (key, type="text", placeholder="") => (
+    <input type={type} value={form[key]} placeholder={placeholder}
+      onChange={e => set(key, e.target.value)}
+      className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-all ${errors[key] ? "border-red-300" : "border-stone-200"}`}
+    />
+  );
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <nav className="bg-white border-b border-stone-200 h-16 flex items-center px-6">
+        <a href="index.html" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div>
+          <span className="font-display font-bold text-gray-900 text-lg">FiberNest</span>
+        </a>
+      </nav>
+
+      <main className="flex-1 flex items-start justify-center px-4 py-12">
+        <div className="w-full max-w-lg">
+          <div className="text-center mb-8">
+            <h1 className="font-display text-4xl font-bold text-gray-900 mb-2">Create Account</h1>
+            <p className="text-gray-400">Join FiberNest and start shopping sustainably</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-8 space-y-4">
+            {apiError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">⚠️ {apiError}</div>}
+
+            <Field label="Email Address" error={errors.email}>
+              {input("email","email","you@email.com")}
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Password" error={errors.password}>
+                <div className="relative">
+                  <input type={showPw?"text":"password"} value={form.password} placeholder="Min. 8 chars"
+                    onChange={e => set("password", e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 pr-10 ${errors.password?"border-red-300":"border-stone-200"}`}
+                  />
+                  <button type="button" onClick={() => setShowPw(s=>!s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-base">{showPw?"🙈":"👁️"}</button>
+                </div>
+              </Field>
+              <Field label="Confirm Password" error={errors.confirm_password}>
+                {input("confirm_password","password","Repeat password")}
+              </Field>
+            </div>
+
+            <Field label="Complete Name" error={errors.full_name}>
+              {input("full_name","text","Juan dela Cruz")}
+            </Field>
+
+            <Field label="Street Address" error={errors.address}>
+              <textarea value={form.address} placeholder="House/Unit No., Street, Barangay, City"
+                onChange={e => set("address", e.target.value)} rows={2}
+                className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 resize-none ${errors.address?"border-red-300":"border-stone-200"}`}
+              />
+            </Field>
+
+            <Field label="Region">
+              <select value={form.region} onChange={e => set("region", e.target.value)}
+                className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 appearance-none bg-white">
+                <option value="">Select region…</option>
+                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Mobile Number" error={errors.mobile}>
+              {input("mobile","tel","09123456789")}
+            </Field>
+
+            <button onClick={handleSubmit} disabled={loading}
+              className="w-full py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all disabled:opacity-50 mt-2">
+              {loading ? "Creating account…" : "Create Account"}
+            </button>
+
+            <p className="text-center text-sm text-gray-400 pt-2">Already have an account? <a href="login.html" className="text-sage font-semibold hover:underline">Sign in</a></p>
+          </div>
+        </div>
+      </main>
+
+      <footer className="bg-gray-900 py-4">
+        <p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – My Profile</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0",tan:"#e8dfd0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+</head>
+<body class="bg-cream font-sans min-h-screen flex flex-col">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+function Navbar() {
+  return (
+    <nav className="bg-white border-b border-stone-200 sticky top-0 z-50 h-16 flex items-center">
+      <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
+        <a href="index.html" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div>
+          <div><span className="font-display font-bold text-gray-900 text-lg">FiberNest</span></div>
+        </a>
+        <div className="flex items-center gap-4">
+          <a href="products.html" className="text-sm text-gray-500 hover:text-gray-900 font-medium">Shop</a>
+          <a href="transactions.html" className="text-sm text-gray-500 hover:text-gray-900 font-medium">Orders</a>
+          <a href="cart.html" className="text-sm text-gray-500 hover:text-gray-900 font-medium">Cart</a>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [form, setForm] = useState({});
+  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [pwForm, setPwForm] = useState({ current:"", newPw:"", confirm:"" });
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState("info");
+
+  useEffect(() => {
+    if (!Api.isLoggedIn()) { window.location.href = "login.html"; return; }
+    Api.get("/users/me")
+      .then(u => { setUser(u); setForm({ full_name: u.full_name||u.name||"", email: u.email||"", address: u.address||"", mobile: u.mobile||"" }); })
+      .catch(() => {
+        const cached = Api.getUser();
+        if (cached) { setUser(cached); setForm({ full_name: cached.full_name||cached.name||"", email: cached.email||"", address: cached.address||"", mobile: cached.mobile||"" }); }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await Api.put("/users/me", form);
+      Api.setUser({ ...Api.getUser(), ...updated });
+      setUser(u => ({ ...u, ...form }));
+      setEditing(false); setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch(e) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const changePw = async () => {
+    setPwError("");
+    if (pwForm.newPw.length < 8) { setPwError("New password must be at least 8 characters."); return; }
+    if (pwForm.newPw !== pwForm.confirm) { setPwError("Passwords do not match."); return; }
+    try {
+      await Api.post("/users/me/change-password", { current_password: pwForm.current, new_password: pwForm.newPw });
+      setPwSuccess(true); setPwForm({ current:"", newPw:"", confirm:"" });
+      setTimeout(() => setPwSuccess(false), 4000);
+    } catch(e) { setPwError(e.message); }
+  };
+
+  const logout = () => { Api.clearToken(); Api.clearUser(); window.location.href = "login.html"; };
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-sage border-t-transparent rounded-full animate-spin"></div></div>;
+
+  const initials = (form.full_name || "U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      {saved && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg">✅ Profile updated successfully</div>}
+
+      <main className="flex-1 max-w-4xl mx-auto px-6 py-10 w-full">
+        {/* Profile Header */}
+        <div className="bg-white rounded-2xl border border-stone-200 p-8 mb-6 flex items-center gap-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-sage/30 to-sage/60 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-sage">
+            {initials}
+          </div>
+          <div className="flex-1">
+            <h1 className="font-display text-2xl font-bold text-gray-900">{form.full_name || "My Account"}</h1>
+            <p className="text-gray-400 text-sm mt-0.5">{form.email}</p>
+            <p className="text-gray-400 text-sm">📍 {form.address || "No address set"}</p>
+          </div>
+          <div className="flex gap-2">
+            <a href="transactions.html" className="px-4 py-2 bg-stone-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-stone-200 transition-all">My Orders</a>
+            <button onClick={logout} className="px-4 py-2 bg-red-50 text-red-500 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all">Log Out</button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-white border border-stone-200 rounded-xl p-1 mb-6 w-fit">
+          {[["info","👤 Profile Info"],["security","🔒 Security"]].map(([t, label]) => (
+            <button key={t} onClick={() => setActiveTab(t)}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab===t?"bg-gray-900 text-white":"text-gray-500 hover:text-gray-700"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "info" && (
+          <div className="bg-white rounded-2xl border border-stone-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-display text-xl font-bold text-gray-900">Personal Information</h2>
+              {!editing ? (
+                <button onClick={() => setEditing(true)} className="px-4 py-2 bg-stone-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-stone-200 transition-all">✏️ Edit</button>
+              ) : (
+                <div className="flex gap-2">
+                  <button onClick={() => setEditing(false)} className="px-4 py-2 bg-stone-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-stone-200 transition-all">Cancel</button>
+                  <button onClick={save} disabled={saving} className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-all disabled:opacity-50">{saving ? "Saving…" : "Save Changes"}</button>
+                </div>
+              )}
+            </div>
+            <div className="grid md:grid-cols-2 gap-5">
+              {[["Full Name","full_name","text","Juan dela Cruz"],["Email Address","email","email","you@email.com"],["Mobile Number","mobile","tel","09123456789"],["Address","address","text","House/Unit, Street, City"]].map(([label, key, type, ph]) => (
+                <div key={key} className={key === "address" ? "md:col-span-2" : ""}>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">{label}</label>
+                  {editing ? (
+                    <input type={type} value={form[key] || ""} placeholder={ph} onChange={e => setForm(f=>({...f,[key]:e.target.value}))}
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20" />
+                  ) : (
+                    <p className="px-4 py-3 bg-stone-50 rounded-xl text-sm text-gray-700">{form[key] || <span className="text-gray-300">Not set</span>}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "security" && (
+          <div className="bg-white rounded-2xl border border-stone-200 p-6">
+            <h2 className="font-display text-xl font-bold text-gray-900 mb-6">Change Password</h2>
+            {pwSuccess && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-600">✅ Password changed successfully.</div>}
+            {pwError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">⚠️ {pwError}</div>}
+            <div className="max-w-sm space-y-4">
+              {[["Current Password","current"],["New Password","newPw"],["Confirm New Password","confirm"]].map(([label, key]) => (
+                <div key={key}>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">{label}</label>
+                  <input type="password" value={pwForm[key]} onChange={e => setPwForm(f=>({...f,[key]:e.target.value}))} placeholder="••••••••"
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20" />
+                </div>
+              ))}
+              <button onClick={changePw} className="w-full py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">Update Password</button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <footer className="bg-gray-900 py-4 mt-auto">
+        <p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

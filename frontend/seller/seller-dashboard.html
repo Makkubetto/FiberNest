@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – Seller Dashboard</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+  <script src="seller-layout.js"></script>
+</head>
+<body class="font-sans">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const MOCK_STATS = { today_sales: 4850, today_orders: 7, month_sales: 92400, month_orders: 134, total_products: 24, low_stock: 3 };
+const MOCK_RECENT = [
+  { id:"ORD-2025-089", buyer:"Maria Santos", total:1349, status:"Processing", date:"Today, 2:15 PM" },
+  { id:"ORD-2025-088", buyer:"Juan dela Cruz", total:980, status:"Shipped", date:"Today, 10:30 AM" },
+  { id:"ORD-2025-087", buyer:"Ana Reyes", total:399, status:"Delivered", date:"Yesterday" },
+  { id:"ORD-2025-086", buyer:"Pedro Lopez", total:2250, status:"Delivered", date:"Yesterday" },
+  { id:"ORD-2025-085", buyer:"Rosa Garcia", total:778, status:"Delivered", date:"Jun 10" },
+];
+
+const STATUS_STYLE = { "Processing":"bg-blue-100 text-blue-700","Shipped":"bg-purple-100 text-purple-700","Delivered":"bg-green-100 text-green-700","Pending":"bg-yellow-100 text-yellow-700","Cancelled":"bg-red-100 text-red-700" };
+
+function StatCard({ icon, label, value, sub, color }) {
+  return (
+    <div className="bg-white rounded-2xl border border-stone-200 p-5">
+      <div className={`w-11 h-11 ${color} rounded-xl flex items-center justify-center text-xl mb-4`}>{icon}</div>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-medium text-gray-700 mt-0.5">{label}</p>
+      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+function App() {
+  const [stats, setStats] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      Api.get("/seller/stats").catch(() => MOCK_STATS),
+      Api.get("/seller/orders/recent").catch(() => MOCK_RECENT),
+    ]).then(([s, o]) => { setStats(s); setOrders(o.orders || o); })
+    .finally(() => setLoading(false));
+  }, []);
+
+  const s = stats || MOCK_STATS;
+  const today = new Date().toLocaleDateString("en-PH",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  return (
+    <SellerLayout active="Dashboard">
+      <div className="max-w-5xl">
+        <div className="mb-8">
+          <h1 className="font-display text-3xl font-bold text-gray-900">Good morning! 👋</h1>
+          <p className="text-gray-400 mt-1">{today}</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard icon="💰" label="Today's Sales"    value={`₱${s.today_sales?.toLocaleString()}`}   sub={`${s.today_orders} orders`}   color="bg-green-100" />
+          <StatCard icon="📅" label="This Month"        value={`₱${s.month_sales?.toLocaleString()}`}   sub={`${s.month_orders} orders`}   color="bg-blue-100" />
+          <StatCard icon="📦" label="Total Products"    value={s.total_products}  sub="in inventory"          color="bg-purple-100" />
+          <StatCard icon="⚠️" label="Low Stock Items"   value={s.low_stock}       sub="need restocking"        color="bg-amber-100" />
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          {[["seller-inventory.html","➕","Add Product","Add a new product to inventory"],["seller-storefront.html","🏪","Edit Storefront","Update banners & featured items"],["seller-reports.html","📊","View Reports","Check detailed sales reports"]].map(([href,ico,label,desc]) => (
+            <a key={href} href={href} className="bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group">
+              <span className="text-3xl block mb-3">{ico}</span>
+              <p className="font-semibold text-gray-900 text-sm">{label}</p>
+              <p className="text-xs text-gray-400 mt-1">{desc}</p>
+            </a>
+          ))}
+        </div>
+
+        {/* Recent orders */}
+        <div className="bg-white rounded-2xl border border-stone-200">
+          <div className="p-5 border-b border-stone-100 flex items-center justify-between">
+            <h2 className="font-display text-lg font-bold text-gray-900">Recent Orders</h2>
+            <a href="seller-reports.html" className="text-xs text-sage font-semibold hover:underline">View All →</a>
+          </div>
+          {loading ? (
+            <div className="p-5 space-y-3">{[1,2,3].map(i=><div key={i} className="h-12 rounded-xl bg-stone-100 animate-pulse"></div>)}</div>
+          ) : (
+            <div className="divide-y divide-stone-100">
+              {orders.map(o => (
+                <div key={o.id} className="px-5 py-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{o.id}</p>
+                    <p className="text-xs text-gray-400">{o.buyer} • {o.date}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_STYLE[o.status] || "bg-gray-100 text-gray-600"}`}>{o.status}</span>
+                    <span className="font-bold text-gray-900 text-sm">₱{Number(o.total).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </SellerLayout>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

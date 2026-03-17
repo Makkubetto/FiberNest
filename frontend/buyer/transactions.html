@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – My Orders</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0",tan:"#e8dfd0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+</head>
+<body class="bg-cream font-sans min-h-screen flex flex-col">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const MOCK_ORDERS = [
+  { id:"ORD-2025-001", date:"2025-05-12", status:"Delivered", payment:"GCash", delivery:"Delivery", total:1349, items:[{name:"Coco Peat Block 5kg",qty:2,price:350},{name:"Seedling Coir Tray",qty:1,price:280},{name:"Coir Hanging Basket",qty:1,price:220}] },
+  { id:"ORD-2025-002", date:"2025-05-20", status:"Processing", payment:"COD", delivery:"Delivery", total:980, items:[{name:"Coir Erosion Control Mat",qty:1,price:980}] },
+  { id:"ORD-2025-003", date:"2025-06-01", status:"Shipped", payment:"Maya", delivery:"Delivery", total:778, items:[{name:"Coir Rope 50m Roll",qty:1,price:380},{name:"Natural Fiber Doormat",qty:1,price:398}] },
+  { id:"ORD-2025-004", date:"2025-06-10", status:"Pending", payment:"Bank Transfer", delivery:"Pickup", total:399, items:[{name:"Grow Bag Set 5pcs",qty:1,price:399}] },
+];
+
+const STATUS_STYLE = {
+  "Pending":    "bg-yellow-100 text-yellow-700",
+  "Processing": "bg-blue-100 text-blue-700",
+  "Shipped":    "bg-purple-100 text-purple-700",
+  "Delivered":  "bg-green-100 text-green-700",
+  "Cancelled":  "bg-red-100 text-red-700",
+};
+
+const STATUS_ICON = { "Pending":"🕐","Processing":"⚙️","Shipped":"🚚","Delivered":"✅","Cancelled":"❌" };
+
+function Navbar() {
+  const user = Api.getUser();
+  return (
+    <nav className="bg-white border-b border-stone-200 sticky top-0 z-50 h-16 flex items-center">
+      <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
+        <a href="index.html" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div>
+          <div><span className="font-display font-bold text-gray-900 text-lg">FiberNest</span></div>
+        </a>
+        <div className="flex items-center gap-4">
+          <a href="products.html" className="text-sm text-gray-500 hover:text-gray-900 font-medium">Shop</a>
+          <a href="cart.html" className="text-sm text-gray-500 hover:text-gray-900 font-medium">Cart</a>
+          {user ? <a href="profile.html" className="w-8 h-8 bg-sage/20 rounded-full flex items-center justify-center text-sage font-bold text-sm">{user.name?.[0]?.toUpperCase()}</a>
+            : <a href="login.html" className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg">Sign In</a>}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function App() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+  const [filter, setFilter] = useState("All");
+
+  useEffect(() => {
+    if (!Api.isLoggedIn()) { window.location.href = "login.html"; return; }
+    Api.get("/orders/my")
+      .then(d => setOrders(d.orders || d))
+      .catch(() => setOrders(MOCK_ORDERS))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const statuses = ["All", ...Object.keys(STATUS_STYLE)];
+  const filtered = filter === "All" ? orders : orders.filter(o => o.status === filter);
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-1 max-w-4xl mx-auto px-6 py-10 w-full">
+        <div className="mb-8">
+          <h1 className="font-display text-4xl font-bold text-gray-900 mb-1">My Orders</h1>
+          <p className="text-gray-400">Track and view your past transactions.</p>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex gap-2 flex-wrap mb-8">
+          {statuses.map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter===s?"bg-gray-900 text-white":"bg-white border border-stone-200 text-gray-500 hover:border-sage hover:text-sage"}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="h-24 rounded-2xl bg-stone-200 animate-pulse"></div>)}</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-24">
+            <p className="text-6xl mb-4">📦</p>
+            <p className="font-display text-xl font-semibold text-gray-700 mb-2">No orders yet</p>
+            <p className="text-gray-400 mb-6">Start shopping to see your orders here.</p>
+            <a href="products.html" className="inline-block px-8 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">Shop Now</a>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map(order => (
+              <div key={order.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                <button onClick={() => setExpanded(expanded === order.id ? null : order.id)}
+                  className="w-full p-5 flex items-center justify-between hover:bg-stone-50 transition-colors text-left">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center text-xl">{STATUS_ICON[order.status]}</div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{order.id}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{order.date} • {order.items?.length} item(s) • {order.payment} • {order.delivery}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_STYLE[order.status]}`}>{order.status}</span>
+                    <span className="font-bold text-gray-900">₱{Number(order.total).toLocaleString()}</span>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded===order.id?"rotate-180":""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                  </div>
+                </button>
+
+                {expanded === order.id && (
+                  <div className="px-5 pb-5 border-t border-stone-100">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider my-3">Items</p>
+                    <div className="space-y-2">
+                      {order.items?.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-700">{item.name} <span className="text-gray-400">× {item.qty || item.quantity}</span></span>
+                          <span className="font-medium text-gray-900">₱{((item.qty || item.quantity) * item.price).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-stone-100 flex justify-between items-center">
+                      <div className="flex gap-2">
+                        {order.status === "Delivered" && (
+                          <button className="px-4 py-2 bg-sage text-white text-xs font-semibold rounded-lg hover:bg-sage-dark transition-all">Reorder</button>
+                        )}
+                        {(order.status === "Pending" || order.status === "Processing") && (
+                          <button className="px-4 py-2 bg-red-50 text-red-500 text-xs font-semibold rounded-lg hover:bg-red-100 transition-all">Cancel Order</button>
+                        )}
+                      </div>
+                      <p className="font-bold text-gray-900 text-sm">Total: ₱{Number(order.total).toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+      <footer className="bg-gray-900 py-4 mt-auto">
+        <p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

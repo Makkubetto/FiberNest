@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – Home</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { display: ["'Playfair Display'","serif"], sans: ["'DM Sans'","sans-serif"] },
+          colors: { sage: { DEFAULT:"#7a8c6e", dark:"#5a6b50", light:"#c5d0bc" }, cream:"#f8f5f0", tan:"#e8dfd0", brown:"#6b4f3a" }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+</head>
+<body class="bg-cream font-sans">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── Shared Nav ──────────────────────────────────────────────
+function Navbar({ cartCount }) {
+  const [scrolled, setScrolled] = useState(false);
+  const user = Api.getUser();
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-sm" : "bg-white/80 backdrop-blur-sm"} border-b border-stone-200`}>
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <a href="index.html" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm font-bold">🌿</div>
+          <div>
+            <span className="font-display font-bold text-gray-900 text-lg leading-none">FiberNest</span>
+            <span className="block text-[10px] text-gray-400 tracking-widest uppercase leading-none mt-0.5">Coir Products</span>
+          </div>
+        </a>
+        <div className="hidden md:flex items-center gap-1">
+          {[["Home","index.html"],["Shop","products.html"],["Storefront","storefront.html"]].map(([label, href]) => (
+            <a key={href} href={href} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${href==="index.html"?"text-gray-900 bg-stone-100":"text-gray-500 hover:text-gray-900 hover:bg-stone-100"}`}>{label}</a>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <a href="cart.html" className="relative p-2 rounded-md hover:bg-stone-100 transition-colors text-gray-700">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 5h14.6M10 21a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+            {cartCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-sage text-white text-[10px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
+          </a>
+          {user ? (
+            <a href="profile.html" className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-stone-100 transition-colors text-sm font-medium text-gray-700">
+              <div className="w-7 h-7 bg-sage/20 rounded-full flex items-center justify-center text-sage font-bold text-xs">{user.name?.[0]?.toUpperCase()}</div>
+              {user.name?.split(" ")[0]}
+            </a>
+          ) : (
+            <a href="login.html" className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors">Sign In</a>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// ── Hero ────────────────────────────────────────────────────
+function Hero() {
+  return (
+    <section className="pt-16 min-h-[92vh] flex items-center relative overflow-hidden bg-[#f4f0e8]">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-80px] right-[-80px] w-[500px] h-[500px] rounded-full bg-sage/10"></div>
+        <div className="absolute bottom-[-60px] left-[-60px] w-[350px] h-[350px] rounded-full bg-tan/60"></div>
+      </div>
+      <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center relative z-10 py-20">
+        <div>
+          <span className="inline-block px-3 py-1 bg-sage/15 text-sage text-xs font-semibold rounded-full tracking-wider uppercase mb-5">🇵🇭 Proudly Philippine-Made</span>
+          <h1 className="font-display text-5xl md:text-6xl font-bold text-gray-900 leading-[1.1] mb-6">
+            Natural Coir<br />
+            <span className="text-sage">Products</span> for<br />
+            Every Need
+          </h1>
+          <p className="text-gray-500 text-lg leading-relaxed mb-8 max-w-md">
+            Premium eco-friendly coconut coir solutions for construction, gardening, and home use crafted sustainably from Philippine coconuts.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a href="products.html" className="px-7 py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all hover:-translate-y-0.5 shadow-lg shadow-gray-900/20">Shop Now</a>
+            <a href="storefront.html" className="px-7 py-3.5 bg-white border border-stone-200 text-gray-700 font-semibold rounded-xl hover:bg-stone-50 transition-all">See Featured</a>
+          </div>
+          <div className="mt-10 flex gap-8">
+            {[["500+","Products"],["2k+","Customers"],["100%","Eco-friendly"]].map(([num, label]) => (
+              <div key={label}>
+                <p className="font-display text-2xl font-bold text-gray-900">{num}</p>
+                <p className="text-sm text-gray-400">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="relative hidden md:block">
+          <div className="w-full aspect-square rounded-3xl bg-gradient-to-br from-sage/20 to-tan/40 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-[120px] mb-4">
+                <img src="/frontend/assets/img/aabde6bd4168158ff99bee1fdae69658.jpg" alt="Coconut Coir" className="w-full h-full object-contain" />
+              </div>
+              <p className="font style catch text-xl text-gray-600 font-semibold">Coconut Coir</p>
+              <p className="font style catch text-sm text-gray-400">Sustainable • Natural • Philippine-Made</p>
+            </div>
+          </div>
+          <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl">🌱</div>
+            <div><p className="text-xs text-gray-400">Eco Score</p><p className="font-bold text-gray-900">Excellent</p></div>
+          </div>
+          <div className="absolute -top-4 -right-4 bg-white rounded-2xl shadow-lg p-4">
+            <p className="text-xs text-gray-400 mb-1">Top Rated</p>
+            <div className="flex gap-0.5 text-amber-400">{"★★★★★"}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Categories ──────────────────────────────────────────────
+function Categories() {
+  const cats = [
+    { icon:"🏗️", name:"Construction", desc:"Coir mats, erosion control, geotextiles" },
+    { icon:"🌿", name:"Gardening", desc:"Coco peat, grow bags, plant liners" },
+    { icon:"🏠", name:"Home & Décor", desc:"Doormats, rugs, natural fiber crafts" },
+    { icon:"📦", name:"Industrial", desc:"Bulk fiber, raw coir, processing material" },
+  ];
+  return (
+    <section className="py-20 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="font-display text-4xl font-bold text-gray-900 mb-3">Browse by Category</h2>
+          <p className="text-gray-400 max-w-md mx-auto">Explore our wide range of coconut coir products across multiple industries.</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {cats.map(c => (
+            <a key={c.name} href="products.html" className="group p-6 rounded-2xl border border-stone-200 hover:border-sage hover:bg-sage/5 transition-all hover:-translate-y-1 cursor-pointer">
+              <div className="text-4xl mb-4">{c.icon}</div>
+              <h3 className="font-display font-semibold text-gray-900 mb-1">{c.name}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{c.desc}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Featured Products ───────────────────────────────────────
+function FeaturedProducts() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    Api.get("/products?limit=4&featured=true")
+      .then(d => setProducts(d.slice ? d.slice(0,4) : d.products?.slice(0,4) || []))
+      .catch(() => setProducts([
+        { id:1, name:"Coco Peat Block", price:299, category:"Gardening", image:"", badge:"Best Seller" },
+        { id:2, name:"Coir Erosion Mat", price:850, category:"Construction", image:"", badge:"New" },
+        { id:3, name:"Natural Doormat", price:450, category:"Home", image:"", badge:"Trending" },
+        { id:4, name:"Grow Bag Set (5pcs)", price:380, category:"Gardening", image:"", badge:"Best Seller" },
+      ]))
+      .finally(() => setLoading(false));
+  }, []);
+  const addToCart = (p) => { Api.cart.add(p); alert(`${p.name} added to cart!`); };
+  const EMOJIS = ["🧱","🌿","🏠","🌱","📦","🥥","🌾","♻️"];
+  return (
+    <section className="py-20 bg-cream">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex items-end justify-between mb-12">
+          <div>
+            <h2 className="font-display text-4xl font-bold text-gray-900 mb-2">Featured Products</h2>
+            <p className="text-gray-400">Our most loved coir products this season.</p>
+          </div>
+          <a href="storefront.html" className="text-sm font-semibold text-sage hover:text-sage-dark underline underline-offset-4">View All →</a>
+        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {[1,2,3,4].map(i => <div key={i} className="h-72 rounded-2xl bg-stone-200 animate-pulse"></div>)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {products.map((p, i) => (
+              <div key={p.id} className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="relative aspect-square bg-gradient-to-br from-stone-100 to-tan/40 flex items-center justify-center text-5xl">
+                  {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : EMOJIS[i % EMOJIS.length]}
+                  {p.badge && <span className="absolute top-3 left-3 px-2 py-0.5 bg-sage text-white text-[10px] font-bold rounded-full uppercase tracking-wider">{p.badge}</span>}
+                </div>
+                <div className="p-4">
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">{p.category}</p>
+                  <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-2">{p.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-gray-900">₱{Number(p.price).toLocaleString()}</span>
+                    <button onClick={() => addToCart(p)} className="w-8 h-8 rounded-lg bg-sage/10 hover:bg-sage hover:text-white text-sage transition-all flex items-center justify-center text-lg">+</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Why Choose Us ───────────────────────────────────────────
+function WhyUs() {
+  const items = [
+    { icon:"🌿", title:"100% Natural", desc:"All products sourced from Philippine coconut husks with zero synthetic additives." },
+    { icon:"🚚", title:"Nationwide Delivery", desc:"We ship to all regions in the Philippines with reliable courier partners." },
+    { icon:"♻️", title:"Sustainable", desc:"Eco-conscious manufacturing reduces agricultural waste and supports local farmers." },
+    { icon:"💬", title:"Local Support", desc:"Filipino customer support team ready to assist you every step of the way." },
+  ];
+  return (
+    <section className="py-20 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="font-display text-4xl font-bold text-gray-900 mb-3">Why Choose FiberNest?</h2>
+        </div>
+        <div className="grid md:grid-cols-4 gap-6">
+          {items.map(i => (
+            <div key={i.title} className="text-center p-6">
+              <div className="w-14 h-14 bg-sage/10 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4">{i.icon}</div>
+              <h3 className="font-display font-semibold text-gray-900 mb-2">{i.title}</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">{i.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Footer ──────────────────────────────────────────────────
+function Footer() {
+  return (
+    <footer className="bg-gray-900 text-white mt-auto">
+      <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8">
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-sm">🌿</div>
+            <span className="font-display font-bold text-lg">FiberNest</span>
+          </div>
+          <p className="text-gray-400 text-sm leading-relaxed">Eco-friendly coconut coir products made in the Philippines.</p>
+        </div>
+        <div>
+          <p className="font-semibold text-sm mb-3 text-gray-300">Shop</p>
+          {[["Products","products.html"],["Storefront","storefront.html"],["Cart","cart.html"]].map(([l,h]) => (
+            <a key={l} href={h} className="block text-sm text-gray-400 hover:text-white mb-2 transition-colors">{l}</a>
+          ))}
+        </div>
+        <div>
+          <p className="font-semibold text-sm mb-3 text-gray-300">Account</p>
+          {[["Login","login.html"],["Register","register.html"],["My Profile","profile.html"],["Orders","transactions.html"]].map(([l,h]) => (
+            <a key={l} href={h} className="block text-sm text-gray-400 hover:text-white mb-2 transition-colors">{l}</a>
+          ))}
+        </div>
+        <div>
+          <p className="font-semibold text-sm mb-3 text-gray-300">Contact</p>
+          <p className="text-sm text-gray-400">📍 Philippines</p>
+          <p className="text-sm text-gray-400 mt-1">📧 hello@fibernest.ph</p>
+          <p className="text-sm text-gray-400 mt-1">📞 +63 912 345 6789</p>
+        </div>
+      </div>
+      <div className="border-t border-gray-800 py-4">
+        <p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p>
+      </div>
+    </footer>
+  );
+}
+
+// ── App ─────────────────────────────────────────────────────
+function App() {
+  const [cartCount, setCartCount] = useState(Api.cart.count());
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar cartCount={cartCount} />
+      <main>
+        <Hero />
+        <Categories />
+        <FeaturedProducts />
+        <WhyUs />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

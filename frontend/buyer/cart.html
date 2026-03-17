@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberNest – Cart</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0",tan:"#e8dfd0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="../api.js"></script>
+</head>
+<body class="bg-cream font-sans min-h-screen flex flex-col">
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+function Navbar({ count }) {
+  return (
+    <nav className="bg-white border-b border-stone-200 sticky top-0 z-50 h-16 flex items-center">
+      <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
+        <a href="index.html" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div>
+          <div><span className="font-display font-bold text-gray-900 text-lg">FiberNest</span></div>
+        </a>
+        <div className="flex items-center gap-4">
+          <a href="products.html" className="text-sm text-gray-500 hover:text-gray-900 font-medium">← Continue Shopping</a>
+          <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 5h14.6M10 21a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+            Cart ({count})
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function App() {
+  const [cart, setCart] = useState(Api.cart.get());
+
+  const refresh = () => setCart(Api.cart.get());
+
+  const updateQty = (productId, qty) => {
+    if (qty < 1) return remove(productId);
+    const c = Api.cart.get().map(i => i.product_id === productId ? { ...i, quantity: qty } : i);
+    Api.cart.save(c); setCart(c);
+  };
+
+  const remove = (productId) => { Api.cart.remove(productId); refresh(); };
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const shipping = subtotal > 2000 ? 0 : 150;
+  const total = subtotal + shipping;
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar count={cart.reduce((s,i) => s + i.quantity, 0)} />
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
+        <h1 className="font-display text-4xl font-bold text-gray-900 mb-8">Your Cart</h1>
+
+        {cart.length === 0 ? (
+          <div className="text-center py-24">
+            <div className="text-7xl mb-5">🛒</div>
+            <h2 className="font-display text-2xl font-bold text-gray-700 mb-2">Your cart is empty</h2>
+            <p className="text-gray-400 mb-6">Add some products to get started!</p>
+            <a href="products.html" className="inline-block px-8 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all">Browse Products</a>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="md:col-span-2 space-y-4">
+              {cart.map(item => (
+                <div key={item.product_id} className="bg-white rounded-2xl border border-stone-200 p-5 flex gap-5 items-center">
+                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-stone-100 to-tan/40 flex items-center justify-center text-3xl flex-shrink-0">
+                    {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-xl" /> : "🥥"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">{item.name}</h3>
+                    <p className="text-sm text-gray-400 mt-0.5">₱{Number(item.price).toLocaleString()} each</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 bg-stone-100 rounded-xl px-3 py-2">
+                      <button onClick={() => updateQty(item.product_id, item.quantity - 1)} className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 font-bold text-lg">-</button>
+                      <span className="w-8 text-center font-semibold text-sm">{item.quantity}</span>
+                      <button onClick={() => updateQty(item.product_id, item.quantity + 1)} className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 font-bold text-lg">+</button>
+                    </div>
+                    <p className="font-bold text-gray-900 w-20 text-right">₱{(item.price * item.quantity).toLocaleString()}</p>
+                    <button onClick={() => remove(item.product_id)} className="text-gray-300 hover:text-red-500 transition-colors ml-1">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => { Api.cart.clear(); setCart([]); }} className="text-sm text-red-400 hover:text-red-600 font-medium mt-2">🗑 Clear all items</button>
+            </div>
+
+            {/* Summary */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                <h2 className="font-display text-xl font-bold text-gray-900 mb-5">Order Summary</h2>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between text-gray-500"><span>Subtotal ({cart.reduce((s,i)=>s+i.quantity,0)} items)</span><span className="font-medium text-gray-700">₱{subtotal.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Shipping</span>
+                    <span className={shipping === 0 ? "text-green-600 font-semibold" : "font-medium text-gray-700"}>{shipping === 0 ? "FREE" : `₱${shipping}`}</span>
+                  </div>
+                  {shipping > 0 && <p className="text-xs text-gray-400">Free shipping on orders over ₱2,000</p>}
+                  <div className="border-t border-stone-100 pt-3 flex justify-between text-gray-900 font-bold text-base">
+                    <span>Total</span><span>₱{total.toLocaleString()}</span>
+                  </div>
+                </div>
+                <a href="checkout.html" className="mt-5 block w-full py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all text-center">
+                  Proceed to Checkout →
+                </a>
+              </div>
+              <div className="bg-sage/10 rounded-2xl border border-sage/20 p-4 text-sm text-gray-600">
+                <p className="font-semibold text-sage mb-1">🌿 Eco-Friendly Packaging</p>
+                <p className="text-xs text-gray-400">All orders are packed in recycled materials.</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+      <footer className="bg-gray-900 py-4 mt-auto">
+        <p className="text-center text-xs text-gray-500">© 2025 FiberNest. For educational purposes only, and no copyright infringement is intended.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Web Framework
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# Database
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+
+# Environment
+python-dotenv==1.0.1
+
+# Validation
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# CORS (built into FastAPI, but listed for clarity)
+# Already included with fastapi
