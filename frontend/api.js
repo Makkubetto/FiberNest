@@ -3,7 +3,7 @@
 //  All pages load this script before their own React code.
 // ============================================================
 
-const API_BASE = "http://localhost:8000"; // ← change to your FastAPI URL
+const API_BASE = "http://127.0.0.1:8000"; // ← change to your FastAPI URL
 
 const Api = {
   // ── Auth helpers ────────────────────────────────────────

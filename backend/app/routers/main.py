@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
- 
+
 from app.database import Base, engine
- 
+
 # Import all models so SQLAlchemy can create the tables
 import app.models.user
 import app.models.product

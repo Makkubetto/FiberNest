@@ -10,6 +10,28 @@
   <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50",light:"#c5d0bc"},cream:"#f8f5f0",tan:"#e8dfd0"}}}}</script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="../api.js"></script>
+  <style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  body {
+    animation: fadeIn 0.4s ease forwards;
+  }
+</style>
+
+<script>
+  document.addEventListener("click", function(e) {
+    const link = e.target.closest("a[href]");
+    if (!link) return;
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("mailto")) return;
+    e.preventDefault();
+    document.body.style.transition = "opacity 0.3s ease";
+    document.body.style.opacity = "0";
+    setTimeout(() => { window.location.href = href; }, 300);
+  });
+</script>
 </head>
 <body class="bg-cream font-sans min-h-screen flex flex-col">
 <div id="root"></div>
@@ -45,9 +67,11 @@ function Navbar() {
   return (
     <nav className="bg-white border-b border-stone-200 sticky top-0 z-50 h-16 flex items-center">
       <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
-        <a href="index.html" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center text-white text-sm">🌿</div>
-          <div><span className="font-display font-bold text-gray-900 text-lg">FiberNest</span><span className="block text-[10px] text-gray-400 tracking-widest uppercase leading-none">Coir Products</span></div>
+        <a href="index.html" className="flex items-center gap-2.5 flex-shrink-0">
+          <img src="/frontend/assets/img/logo.png" alt="FiberNest" className="h-10 w-auto" />
+          <div>
+            <span className="font-display font-bold text-gray-900 text-lg leading-none">FiberNest</span>
+          </div>
         </a>
         <div className="hidden md:flex items-center gap-1">
           {[["Home","index.html"],["Shop","products.html"],["Storefront","storefront.html"]].map(([l,h]) => (
@@ -69,7 +93,7 @@ function Navbar() {
 
 function Banner({ data }) {
   return (
-    <div className={`bg-gradient-to-r ${data.bg} text-white rounded-2xl p-10 mx-0 flex items-center justify-between`}>
+    <div className="text-white rounded-2xl p-10 mx-0 flex items-center justify-between"style={{background: "linear-gradient(to right, #7a8c6e, #5a6b50)"}}>
       <div>
         <p className="text-white/70 text-sm uppercase tracking-widest mb-2">Featured Campaign</p>
         <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">{data.title}</h2>
@@ -84,8 +108,12 @@ function Banner({ data }) {
 function ProductCard({ p, onAdd }) {
   return (
     <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
-      <div className="relative aspect-square bg-gradient-to-br from-stone-100 to-tan/40 flex items-center justify-center text-5xl">
-        {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : p.emoji}
+      <div className="relative aspect-square flex items-center justify-center text-5xl"
+        style={{background: "linear-gradient(135deg, #f5f5f4, #e8dfd0)"}}>
+        {p.image 
+          ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> 
+          : <span className="text-5xl">{p.emoji || "🥥"}</span>
+        }
         <span className={`absolute top-3 left-3 px-2 py-0.5 ${BADGE_COLOR[p.badge] || "bg-gray-500"} text-white text-[10px] font-bold rounded-full uppercase tracking-wider`}>{p.badge}</span>
       </div>
       <div className="p-4">
@@ -122,8 +150,8 @@ function App() {
 
   useEffect(() => {
     Api.get("/storefront")
-      .then(d => setStorefront(d))
-      .catch(() => setStorefront(MOCK));
+    .then(d => setStorefront(d))
+    .catch(() => setStorefront(MOCK));
   }, []);
 
   const addToCart = (p) => {
