@@ -176,7 +176,11 @@ __pycache__/
 
 ## 👨‍💻 Group Members
 
-- *(Add your group members here)*
+- *(Mapoy, Pauline Erika)*
+- *(Ibarrientos, Forest Red)*
+- *(Julius De leon)*
+- *(Batac, John Gabriel)*
+
 
 ---
 
