@@ -7,8 +7,8 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["'DM Sans'","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0"}}}}</script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:["'Playfair Display'","serif"],sans:["Inter","sans-serif"]},colors:{sage:{DEFAULT:"#7a8c6e",dark:"#5a6b50"},cream:"#f8f5f0"}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../api.js"></script>
   <script type="text/babel" src="seller-layout.js"></script>
 </head>
@@ -102,7 +102,7 @@ function App() {
       <div className="max-w-5xl">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-3xl font-bold text-gray-900">Reports</h1>
+            <h1 className="font-sans text-3xl font-bold text-gray-900">Reports</h1>
             <p className="text-gray-400 mt-1">As of {today}</p>
           </div>
           <button onClick={() => window.print()} className="px-4 py-2 bg-stone-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-stone-200 transition-all">🖨️ Print</button>
@@ -140,14 +140,14 @@ function App() {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Sales chart */}
               <div className="bg-white rounded-2xl border border-stone-200 p-6">
-                <h3 className="font-display font-bold text-gray-900 mb-1">Daily Sales (June)</h3>
+                <h3 className="font-sans font-bold text-gray-900 mb-1">Daily Sales (June)</h3>
                 <p className="text-xs text-gray-400 mb-5">Revenue per day in ₱</p>
                 <SalesChart data={d.daily || MOCK_SALES.daily} />
               </div>
 
               {/* By category */}
               <div className="bg-white rounded-2xl border border-stone-200 p-6">
-                <h3 className="font-display font-bold text-gray-900 mb-5">Revenue by Category</h3>
+                <h3 className="font-sans font-bold text-gray-900 mb-5">Revenue by Category</h3>
                 <div className="space-y-4">
                   {(d.by_category || MOCK_SALES.by_category).map(c => (
                     <div key={c.cat}>
@@ -165,7 +165,7 @@ function App() {
             {/* Top products */}
             <div className="bg-white rounded-2xl border border-stone-200">
               <div className="p-5 border-b border-stone-100">
-                <h3 className="font-display font-bold text-gray-900">Top Selling Products (This Month)</h3>
+                <h3 className="font-sans font-bold text-gray-900">Top Selling Products (This Month)</h3>
               </div>
               <table className="w-full text-sm">
                 <thead className="bg-stone-50">
@@ -219,7 +219,7 @@ function App() {
             {/* Inventory table */}
             <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
               <div className="p-5 border-b border-stone-100">
-                <h3 className="font-display font-bold text-gray-900">Inventory Report</h3>
+                <h3 className="font-sans font-bold text-gray-900">Inventory Report</h3>
               </div>
               <table className="w-full text-sm">
                 <thead className="bg-stone-50">
