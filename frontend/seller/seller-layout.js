@@ -30,7 +30,9 @@ function SellerLayout({ children, active }) {
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 bg-gray-900 flex flex-col transition-transform duration-300 ${sideOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         <div className="p-5 border-b border-white/10">
           <a href="seller-dashboard.html" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-sage rounded-xl flex items-center justify-center text-white text-base">🌿</div>
+            <div className="w-9 h-9 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 shadow-sm">
+              <img src="../assets/img/logo.png" className="w-7 h-7 object-contain" />
+            </div>
             <div>
               <p className="font-display font-bold text-white text-base leading-none">FiberNest</p>
               <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">Seller Dashboard</p>
